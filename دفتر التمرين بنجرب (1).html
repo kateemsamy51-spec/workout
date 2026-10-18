@@ -1,0 +1,495 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>دفتر التمرين (Copy)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Cairo:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a gym logbook. Sticky day tabs on top, one card per exercise, rest timer docked at the bottom. */
+:root{
+  --bg:#E9ECEA; --surface:#F6F7F5; --ink:#15191C; --muted:#586671; --line:#C9D0CC;
+  --accent:#C8321A; --on-accent:#FFFFFF; --ok:#1E7A4C; --body:#D3D8D5; --muscle:#B6BEBA;
+  --f-disp:"Barlow Condensed","Cairo",system-ui,sans-serif;
+  --f-body:"Cairo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1214; --surface:#181C1F; --ink:#ECEFEA; --muted:#9AA5AD; --line:#2A3034;
+    --accent:#FF6B3F; --on-accent:#14181B; --ok:#4CC38A; --body:#262C30; --muscle:#363D42; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1214; --surface:#181C1F; --ink:#ECEFEA; --muted:#9AA5AD; --line:#2A3034;
+  --accent:#FF6B3F; --on-accent:#14181B; --ok:#4CC38A; --body:#262C30; --muscle:#363D42; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6;
+  padding-block:0 28px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+body.resting{padding-block-end:110px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+.wrap{max-width:640px;margin-inline:auto}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:14px 10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.brand h1{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:0}
+.brand .date{font-size:.85rem;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tab{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 4px;text-align:center;line-height:1.25;min-width:0}
+.tab b{display:block;font-size:.95rem;font-weight:800}
+.tab small{display:block;font-size:.72rem;color:var(--muted)}
+.tab[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tab[aria-pressed="true"] small{color:inherit;opacity:.85}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-top:10px}
+.seg{display:flex;gap:4px}
+.seg button{background:transparent;border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-size:.85rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);font-weight:600}
+.progress{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.progress b{color:var(--ink)}
+
+.views{display:flex;gap:18px;margin-top:10px}
+.views button{background:none;border:0;border-bottom:2px solid transparent;padding:2px 0;font-weight:600;color:var(--muted)}
+.views button[aria-pressed="true"]{color:var(--ink);border-color:var(--accent)}
+
+main{display:flex;flex-direction:column;gap:14px;padding-top:16px}
+.banner{background:var(--surface);border:1px solid var(--line);border-inline-start:4px solid var(--accent);border-radius:6px;padding:10px 12px;font-size:.9rem}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:.92rem}
+.switch{flex:none;width:44px;height:26px;border-radius:13px;border:1px solid var(--line);background:var(--bg);position:relative;padding:0}
+.switch::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:20px;height:20px;border-radius:50%;background:var(--muted);transition:transform .15s}
+.switch[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.switch[aria-pressed="true"]::after{background:var(--on-accent);transform:translateX(-18px)}
+
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ex-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.ex-title{min-width:0}
+.ex h3{margin:0;font-family:var(--f-disp);font-size:1.6rem;line-height:1.1;font-weight:700;text-wrap:balance;direction:ltr;text-align:start;unicode-bidi:isolate}
+.ar{font-size:.98rem;font-weight:600;color:var(--muted);margin-top:2px}
+.target{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
+.target b{font-family:var(--f-mono);font-weight:500;color:var(--ink)}
+.fig{flex:none;width:112px;margin:0}
+.fig svg{display:block;width:100%;height:auto}
+.fig .base{fill:var(--body)} .fig .m{fill:var(--muscle)} .fig .m.on{fill:var(--accent)}
+.fig text{font-family:var(--f-body);font-size:9px;fill:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0;padding:0;list-style:none}
+.chips li{font-size:.72rem;border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:0 6px;line-height:1.5}
+.cue{margin:0;font-size:.9rem}
+.last{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.last .nums{font-family:var(--f-mono);direction:ltr;unicode-bidi:isolate}
+.up{background:var(--ok);color:#fff;border-radius:4px;padding:0 7px;font-weight:600;font-size:.78rem}
+:root[data-theme="dark"] .up{color:#08140E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .up{color:#08140E}}
+
+.sets{display:flex;flex-direction:column;gap:6px}
+.set{display:grid;grid-template-columns:34px minmax(0,1fr) 14px minmax(0,1fr) 46px;align-items:center;gap:6px}
+.set .n{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);text-align:center}
+.set .x{text-align:center;color:var(--muted);font-family:var(--f-mono)}
+.set label{position:relative;display:block;min-width:0}
+.set input{width:100%;height:46px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;font-family:var(--f-mono);font-size:1.1rem;text-align:center;padding:0 24px 0 4px;direction:ltr}
+.set input::placeholder{color:var(--muted);opacity:.65}
+.set label span{position:absolute;inset-inline-end:6px;top:50%;transform:translateY(-50%);font-size:.7rem;color:var(--muted);pointer-events:none}
+.chk{height:46px;border-radius:6px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center;padding:0}
+.chk svg{width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.chk[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.chk[aria-pressed="true"] svg{stroke:#fff}
+.set.done input{border-color:var(--ok)}
+.demo{align-self:flex-start;font-size:.85rem;color:var(--accent);text-underline-offset:3px}
+
+.savebar{display:flex;justify-content:center;padding-top:6px}
+.btn{background:var(--accent);color:var(--on-accent);border:0;border-radius:8px;padding:12px 28px;font-weight:800;font-size:1.05rem}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 12px;font-size:.82rem;font-weight:600}
+.btn.danger{color:var(--accent);border-color:var(--accent)}
+
+.sess{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.sess header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sess h3{margin:0;font-size:1.05rem;font-weight:800}
+.sess .d{font-size:.82rem;color:var(--muted)}
+.sess ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+.sess li{display:flex;justify-content:space-between;gap:12px}
+.sess li span:first-child{direction:ltr;unicode-bidi:isolate}
+.sess li span:last-child{font-family:var(--f-mono);direction:ltr;unicode-bidi:isolate;color:var(--muted);text-align:end}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;border:1px dashed var(--line);border-radius:10px}
+
+.rest{position:fixed;inset:auto 0 0 0;z-index:25;background:var(--surface);border-top:2px solid var(--accent);padding:10px max(16px, env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-right,0px))}
+.rest-in{max-width:640px;margin-inline:auto;display:flex;flex-direction:column;gap:8px}
+.rest-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rest-time{font-family:var(--f-disp);font-weight:700;font-size:2.4rem;line-height:1;letter-spacing:.02em;direction:ltr}
+.rest-lbl{font-size:.85rem;color:var(--muted)}
+.rest-btns{display:flex;gap:6px}
+.track{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.fill{height:100%;width:100%;background:var(--accent);transform-origin:right center}
+.toast{position:fixed;inset-inline:0;bottom:calc(90px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;z-index:40}
+.toast div{background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;font-weight:600;font-size:.92rem}
+@media (prefers-reduced-motion:no-preference){.fill{transition:transform .25s linear}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>دفتر التمرين</h1><span class="date" id="today"></span></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="bar">
+      <div class="seg" id="restseg" aria-label="مدة الراحة"></div>
+      <div class="progress" id="prog"></div>
+    </div>
+    <nav class="views" aria-label="العرض">
+      <button type="button" data-act="view" data-v="train" id="vt">التمرين</button>
+      <button type="button" data-act="view" data-v="log" id="vl">السجل</button>
+    </nav>
+  </header>
+  <main id="app"></main>
+</div>
+
+<div class="rest" id="rest" hidden>
+  <div class="rest-in">
+    <div class="rest-row">
+      <div><div class="rest-lbl" id="restlbl">راحة</div><div class="rest-time" id="resttime">2:30</div></div>
+      <div class="rest-btns">
+        <button type="button" class="btn ghost" data-act="rest-add" data-s="-15">−15</button>
+        <button type="button" class="btn ghost" data-act="rest-add" data-s="15">+15</button>
+        <button type="button" class="btn ghost" data-act="rest-skip">تخطي</button>
+      </div>
+    </div>
+    <div class="track"><div class="fill" id="restfill"></div></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden><div id="toastmsg"></div></div>
+
+<script>
+(function(){
+"use strict";
+document.documentElement.setAttribute("dir","rtl");
+document.documentElement.setAttribute("lang","ar");
+
+/* ---------- data ---------- */
+var MN = {chest:"صدر",delt_f:"كتف أمامي",delt_r:"كتف خلفي",biceps:"باي",triceps:"تراي",abs:"بطن",quads:"فخذ أمامي",hams:"فخذ خلفي",glutes:"جلوتس",calves:"سمانة",lats:"ظهر (لاتس)",upper_back:"ظهر علوي",forearms:"ساعد",traps:"ترابيس",lower_back:"أسفل الظهر"};
+
+var DAYS = [
+ {id:"d1",name:"صدر وضهر",wd:"الجمعة",dow:5,ex:[
+  {id:"fdbp",n:"Flat Dumbbell Bench Press",s:3,lo:6,hi:10,rt:"2–3 دقائق",rest:150,m:["chest","delt_f","triceps"],cue:"ده تمرين الضغط الأساسي للصدر في الأسبوع، نزّل الدمبل بتحكم وادفع لفوق.",q:"flat dumbbell bench press form"},
+  {id:"pullup",n:"Pull-Ups",s:2,lo:6,hi:10,rp:"حسب قدرتك",rest:120,m:["lats","biceps","upper_back"],cue:"ابدأ من التعليق بتحكم، واسحب بعضلات الضهر والدراعين، وانزل ببطء من غير تأرجح.",q:"pull up form"},
+  {id:"wgpd",n:"Wide-Grip Lat Pulldown",s:2,lo:6,hi:8,rt:"دقيقتين تقريبًا",rest:120,m:["lats","biceps","upper_back"],cue:"قبضة أوسع شوية من الكتفين، واسحب البار لأعلى الصدر ووجّه الكوعين لتحت.",q:"wide grip lat pulldown form"},
+  {id:"hilo",n:"High-to-Low Cable Crossover",s:2,lo:8,hi:12,rt:"60–90 ث",rest:75,m:["chest"],cue:"البكرات مرتفعة، واسحب الدراعين في مسار قوسي لتحت وقدام وثبّت الجذع.",q:"high to low cable crossover form"},
+  {id:"tbar",n:"T-Bar Row",s:2,lo:6,hi:8,rt:"2–3 دقائق",rest:150,m:["upper_back","lats","delt_r","lower_back"],warn:"بسبب تاريخ الانزلاق الغضروفي: خلّي الضهر ثابت ومحايد، وفضّل وضع الصدر مسنود لو متاح، واسأل الدكتور لو في أي وجع.",cue:"ثبّت وضع الجسم قبل السحب، واسحب المقبض ناحية الجذع وانزل بتحكم.",q:"t bar row form"},
+  {id:"salp",n:"Single-Arm Cable Lat Pull",s:2,lo:12,hi:15,rt:"60–90 ث",rest:75,m:["lats"],cue:"2 مجموعات لكل دراع. اسحب الكوع ناحية جسمك وركّز على حركة الكتف والضهر.",q:"single arm cable lat pulldown form"},
+  {id:"pecdeck",n:"Pec Deck",s:2,lo:8,hi:12,rt:"60–90 ث",rest:75,m:["chest"],cue:"المقعد في مستوى مناسب للصدر. اجمع الدراعين بتحكم وارجع ببطء لحد ما تحس بتمدد في الصدر.",q:"pec deck fly form"}
+ ]},
+ {id:"d2",name:"دراع وكتف",wd:"السبت",dow:6,ex:[
+  {id:"dbsp",n:"Dumbbell Shoulder Press",s:2,lo:6,hi:10,m:["delt_f","triceps"],cue:"قاعد والضهر مسنود، ادفع الدمبلين لفوق من غير تقويس الضهر وانزل بتحكم لمستوى الودن.",q:"seated dumbbell shoulder press form"},
+  {id:"salr",n:"Single-Arm Cable Lateral Raise",s:2,lo:8,hi:12,u:true,m:["delt_f","delt_r"],cue:"2 مجموعات لكل دراع. قف بجانب الكابل وارفع الدراع في مسار مريح لحد مستوى الكتف.",q:"single arm cable lateral raise form"},
+  {id:"rpd",n:"Reverse Pec Deck",s:3,lo:8,hi:12,m:["delt_r","upper_back"],cue:"صدرك مقابل الوسادة، افتح الدراعين للجنب والخلف وثبّت الجذع.",q:"reverse pec deck form"},
+  {id:"sspd",n:"Straight-Bar Cable Pushdown",s:2,lo:8,hi:12,tag:"سوبر ست (أ)",m:["triceps"],cue:"اعمل التمرين ده وبعده على طول مد الحبل فوق الراس، وبعدين ارتاح 90–120 ث.",q:"straight bar triceps pushdown form"},
+  {id:"ssoh",n:"Overhead Rope Extension",s:2,lo:8,hi:12,tag:"سوبر ست (ب)",m:["triceps"],cue:"الكوعين لفوق وقريبين من الودن. بعد المجموعة ارتاح 90–120 ث وكرر.",q:"overhead cable rope triceps extension form"},
+  {id:"incurl",n:"Incline Dumbbell Curl",s:2,lo:6,hi:8,m:["biceps"],cue:"اضبط المقعد على ميل مناسب، وسيب الدراعين جنب الجسم وانزل ببطء. الأهم أداء نضيف وتقدم تدريجي.",q:"incline dumbbell curl form"},
+  {id:"hammer",n:"Dumbbell Hammer Curl",s:2,lo:10,hi:12,m:["biceps","forearms"],cue:"كفوف إيديك متقابلة، ثبّت الكتفين وانزل بتحكم.",q:"dumbbell hammer curl form"},
+  {id:"shrug",n:"Cable Shrug",s:2,lo:12,hi:15,m:["traps"],cue:"ارفع كتفيك لفوق بتحكم، وقّف لحظة فوق وانزل ببطء.",q:"cable shrug form"},
+  {id:"wrist",n:"Cable Wrist / Forearm",s:2,lo:10,hi:12,m:["forearms"],cue:"استخدم مقبض الكابل، وحركة الرسغ ثابتة ومسيطر عليها.",q:"cable wrist curl form"}
+ ]},
+ {id:"d3",name:"أمامي",wd:"الإثنين",dow:1,ex:[
+  {id:"incfly",n:"Incline Cable Fly",s:3,lo:8,hi:12,rt:"60–90 ث",rest:75,m:["chest","delt_f"],cue:"اضبط البكرات في مستوى منخفض، وحرك الدراعين لفوق وقدام في مسار قوسي قوي.",q:"incline cable fly form"},
+  {id:"legpress",n:"Leg Press",s:2,lo:8,hi:12,m:["quads","glutes"],leg:true,cue:"ضع القدمين على المنصة في وضع مريح وانزل بتحكم.",q:"leg press form"},
+  {id:"cdips",n:"Chest Dips (Machine)",s:2,lo:8,hi:12,rp:"12 أو حسب قدرتك",m:["chest","triceps","delt_f"],cue:"ميّل الجذع لقدام عشان تركز على الصدر، وانزل في مدى تتحكم فيه من غير ألم في الكتف. لو تقيل عليك استخدم جهاز المساعدة.",q:"chest dips machine form"},
+  {id:"legext",n:"Leg Extension",s:3,lo:10,hi:15,m:["quads"],leg:true,cue:"اضبط الجهاز بحيث محور الدوران يوافق الركبة، ارفع الوزن بمد الركبتين وقّف لحظة فوق وانزل بتحكم.",q:"leg extension form"},
+  {id:"preacher",n:"Machine Preacher Curl",s:2,lo:8,hi:12,m:["biceps"],cue:"الكوع قدام جسمك والدراع مسنودة على الوسادة، انزل لآخر مدى بتحكم وارفع من غير تأرجح.",q:"machine preacher curl form"},
+  {id:"msp",n:"Machine Shoulder Press",s:2,lo:8,hi:12,m:["delt_f","triceps"],cue:"اضبط المقعد بحيث المقابض في مستوى مناسب، وادفع لفوق من غير مبالغة في تقويس الضهر.",q:"machine shoulder press form"},
+  {id:"dlr",n:"Dumbbell Lateral Raise",s:2,lo:12,hi:15,m:["delt_f","delt_r"],cue:"ارفع الدمبلين للجنبين بوزن تتحكم فيه، وتجنب المرجحة وانزل ببطء.",q:"dumbbell lateral raise form"},
+  {id:"ccrunch",n:"Cable Crunch",s:3,lo:10,hi:15,rt:"60–90 ث",rest:75,m:["abs"],warn:"ثني الجذع بحمل ممكن يضايق الضهر مع تاريخ الانزلاق الغضروفي: نفّذه بس لو الدكتور أو الأخصائي وافق.",cue:"كرنش بالكابل بحركة محسوبة، والنفس مع الشد.",q:"cable crunch form"}
+ ]},
+ {id:"d4",name:"خلفي",wd:"الأربعاء",dow:3,ex:[
+  {id:"crdf",n:"Cable Rear Delt Fly",s:2,lo:12,hi:15,rt:"60–90 ث",rest:75,m:["delt_r","upper_back"],cue:"افتح ذراعيك للخارج بتحكم من غير مرجحة أو تحريك الجذع.",q:"cable rear delt fly form"},
+  {id:"calf",n:"Calf Raise",s:3,lo:10,hi:15,rt:"60–90 ث",rest:75,m:["calves"],leg:true,cue:"اطلع لأعلى مدى مريح، اثبت لحظة وانزل ببطء.",q:"calf raise form"},
+  {id:"dbrdl",n:"Dumbbell Romanian Deadlift",s:2,lo:8,hi:12,rt:"2–3 دقائق",rest:150,m:["hams","glutes","lower_back"],leg:true,warn:"بسبب تاريخ الانزلاق الغضروفي: التنفيذ الفعلي بعد السماح الطبي، وبأوزان خفيفة مع ثبات تام للضهر.",cue:"ادفع الحوض للخلف وخلي الدمبلين قريبين من رجليك، وركّز على ثبات الضهر.",q:"dumbbell romanian deadlift form"},
+  {id:"legcurl",n:"Lying Leg Curl",s:2,lo:10,hi:12,rt:"90 ث",rest:90,m:["hams"],leg:true,cue:"نايم على بطنك، اسحب الكعب ناحية المؤخرة وقّف لحظة وانزل ببطء. ده بيشغل الهامسترينج من غير تحميل على الضهر.",q:"lying leg curl form"},
+  {id:"wgsr",n:"Wide-Grip Seated Cable Row",s:2,lo:8,hi:12,rt:"90–120 ث",rest:105,m:["upper_back","lats","delt_r"],cue:"اسحب ناحية أعلى البطن ووجّه الكوعين للخارج نسبيًا، من غير مرجحة الجذع.",q:"wide grip seated cable row form"},
+  {id:"sapd",n:"Straight-Arm Cable Pulldown",s:2,lo:12,hi:15,rt:"60–90 ث",rest:75,m:["lats"],cue:"اسحب المقبض ناحية الفخذين مع ثبات بسيط في زاوية الكوع.",q:"straight arm cable pulldown form"},
+  {id:"sapush",n:"Single-Arm Cable Triceps Pushdown",s:2,lo:10,hi:15,u:true,rt:"60–90 ث",rest:75,m:["triceps"],cue:"2 مجموعات لكل دراع. ثبّت الكوع بجانب جسمك ومد الساعد لأسفل بتحكم.",q:"single arm cable triceps pushdown form"},
+  {id:"hipthrust",n:"Hip Thrust",s:2,lo:8,hi:12,rt:"90–120 ث",rest:105,m:["glutes","hams"],leg:true,cue:"ارفع الحوض بتحكم واعصر المؤخرة في الأعلى من غير تقويس في أسفل الضهر.",q:"hip thrust form"},
+  {id:"abduct",n:"Hip Abduction Machine",s:2,lo:12,hi:15,rt:"60 ث",rest:60,m:["glutes"],leg:true,cue:"قاعد وضهرك مسنود، افتح الفخدين للخارج بتحكم وارجع ببطء. بيشغل عضلات المؤخرة الجانبية اللي بتثبت الحوض.",q:"hip abduction machine form"},
+  {id:"birddog",n:"Bird Dog",s:2,lo:8,hi:10,u:true,us:" لكل ناحية",rt:"60 ث",rest:60,m:["lower_back","glutes","abs"],leg:true,cue:"على أربع، مد دراع ورجل من الناحيتين المتعاكستين وثبّت الضهر محايد، وقّف 2–3 ثواني. 2 مجموعات لكل ناحية.",q:"bird dog exercise form"},
+  {id:"pallof",n:"Cable Pallof Press",s:2,lo:10,hi:12,u:true,us:" لكل ناحية",m:["abs"],cue:"الكابل على جنبك، ادفع المقبض قدامك وامنع الجسم من الدوران، وثبّت 1–2 ثانية. 2 مجموعات لكل ناحية.",q:"pallof press form"}
+ ]}
+];
+var AR = {fdbp:"ضغط صدر مستوي بالدمبل",hilo:"تفتيح كابل من أعلى لأسفل",pecdeck:"جهاز تفتيح الصدر (بيك دك)",pullup:"العقلة",wgpd:"سحب أمامي بقبضة واسعة",tbar:"تجديف تي-بار",salp:"سحب لات بالكابل بذراع واحدة",
+salr:"رفرفة جانبية بالكابل بذراع واحدة",bayes:"باي بالكابل (بايزيان)",rpd:"جهاز الكتف الخلفي",sspd:"دفع ترايسبس بالبار المستقيم",ssoh:"مد ترايسبس بالحبل فوق الراس",incurl:"باي بالدمبل على بنش مائل",hammer:"هامر كيرل بالدمبل",shrug:"هز الكتفين بالكابل",wrist:"تمرين الساعد بالكابل",
+incfly:"تفتيح صدر بالكابل من أسفل لأعلى",cdips:"متوازي للصدر",legext:"مد الرجل على الجهاز (فخذ أمامي)",msp:"ضغط كتف على الجهاز",dlr:"رفرفة جانبية بالدمبل",legpress:"ضغط الرجل",
+crdf:"رفرفة كتف خلفي بالكابل",calf:"تمرين السمانة",dbrdl:"رفعة رومانية بالدمبل",wgsr:"تجديف كابل بقبضة واسعة",sapd:"سحب لات بذراعين شبه مستقيمين",ccrunch:"كرنش بطن بالكابل",sapush:"دفع ترايسبس بالكابل بذراع واحدة",hipthrust:"دفع الحوض",preacher:"باي على جهاز البريتشر",birddog:"بيرد دوج (تقوية الكور والقطنية)",pallof:"بالوف برس بالكابل (ثبات الكور)",dbsp:"ضغط كتف بالدمبل",legcurl:"ثني الرجل نايم على البطن (هامسترينج)",abduct:"جهاز إبعاد الفخدين (مؤخرة جانبية)"};
+var RESTS = [90,120,150,180];
+
+/* ---------- state ---------- */
+var LS = "dafter-tamreen-v1";
+var S = {v:1,t:0,sessions:[],draft:{},prefs:{day:0,rest:150,legSafe:false}};
+try{ var raw = localStorage.getItem(LS); if(raw){ var o = JSON.parse(raw); if(o && o.sessions){ S = o; } } }catch(e){}
+S.prefs = S.prefs || {day:0,rest:150,legSafe:false};
+S.draft = S.draft || {};
+var view = "train";
+var dayIdx = 0;
+var restToday = false, startIdx = 0;
+(function(){
+  var today = new Date().getDay(), f = -1, off = 0;
+  for(off=0; off<7 && f<0; off++){
+    var dw = (today+off)%7;
+    for(var i=0;i<DAYS.length;i++){ if(DAYS[i].dow===dw){ f=i; break; } }
+    if(f>=0) break;
+  }
+  restToday = off>0; startIdx = f>=0 ? f : 0; dayIdx = startIdx;
+})();
+var cloudRef = null, cloudTimer = null;
+
+function persist(){
+  S.t = Date.now();
+  try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){}
+  if(cloudRef){
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(function(){
+      try{ cloudRef.set({t:S.t, json:JSON.stringify(S)}).catch(function(){}); }catch(e){}
+    }, 700);
+  }
+}
+function initCloud(){
+  if(!(window.claude && claude.use)) return;
+  Promise.all([claude.use("db"), claude.use("user")]).then(function(r){
+    var db = r[0], user = r[1];
+    if(!db || !user) return null;
+    return user.id().then(function(id){
+      cloudRef = db.doc("data/users/"+id+"/state");
+      return cloudRef.get();
+    });
+  }).then(function(snap){
+    if(!snap) return;
+    var d = snap.exists ? snap.data() : null;
+    if(d && d.json && d.t > (S.t||0)){
+      try{ var o = JSON.parse(d.json); if(o && o.sessions){ S = o; S.prefs = S.prefs||{day:0,rest:150,legSafe:false}; S.draft = S.draft||{}; try{localStorage.setItem(LS, JSON.stringify(S));}catch(e){} renderAll(); } }catch(e){}
+    } else if(S.sessions.length || Object.keys(S.draft).length){
+      cloudRef.set({t:S.t||Date.now(), json:JSON.stringify(S)}).catch(function(){});
+    }
+  }).catch(function(){});
+}
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function todayKey(){ var d=new Date(); return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+function fmtDate(k){ var p=k.split("-"); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"}); }
+function dayOf(id){ for(var i=0;i<DAYS.length;i++) if(DAYS[i].id===id) return DAYS[i]; return null; }
+function draftFor(day){
+  var d = S.draft[day.id] = S.draft[day.id] || {};
+  day.ex.forEach(function(e){
+    var a = d[e.id] = d[e.id] || [];
+    while(a.length < e.s) a.push({w:"",r:"",d:false});
+  });
+  return d;
+}
+function lastFor(exId){
+  for(var i=0;i<S.sessions.length;i++){
+    var s = S.sessions[i];
+    if(s.sets && s.sets[exId] && s.sets[exId].length) return {date:s.date, sets:s.sets[exId]};
+  }
+  return null;
+}
+function bestW(exId){
+  var b = 0;
+  S.sessions.forEach(function(s){ (s.sets[exId]||[]).forEach(function(x){ if(x.w>b) b=x.w; }); });
+  return b;
+}
+function visibleEx(day){ return day.ex.filter(function(e){ return !(S.prefs.legSafe && e.leg); }); }
+function toast(msg){
+  $("toastmsg").textContent = msg; $("toast").hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ $("toast").hidden = true; }, 2200);
+}
+function mmss(s){ s=Math.max(0,s); return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2); }
+
+/* ---------- muscle figure ---------- */
+function fig(on){
+  function m(k,els){ return '<g class="m'+(on.indexOf(k)>-1?' on':'')+'">'+els+'</g>'; }
+  function el(cx,cy,rx,ry){ return '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'"/>'; }
+  function pair(cx,cy,rx,ry){ return el(cx,cy,rx,ry)+el(100-cx,cy,rx,ry); }
+  var base = '<g class="base"><circle cx="50" cy="14" r="9"/><rect x="30" y="27" width="40" height="66" rx="12"/><rect x="13" y="34" width="13" height="58" rx="6"/><rect x="74" y="34" width="13" height="58" rx="6"/><rect x="33" y="90" width="16" height="108" rx="7"/><rect x="51" y="90" width="16" height="108" rx="7"/></g>';
+  var front = base + m("delt_f",pair(26,40,8,7)) + m("chest",pair(41,52,9,8)) + m("biceps",pair(19.5,58,5,11)) + m("abs",el(50,76,8,15)) + m("forearms",pair(19.5,81,4.5,9)) + m("quads",pair(41,128,7.5,24)) + m("calves",pair(41,173,6,17));
+  var back = base + m("traps",el(50,39,12,8)) + m("delt_r",pair(26,40,8,7)) + m("upper_back",el(50,55,8,8)) + m("lats",pair(39,70,8,13)) + m("lower_back",el(50,87,8,6)) + m("triceps",pair(19.5,58,5,11)) + m("forearms",pair(19.5,81,4.5,9)) + m("glutes",pair(42,102,8.5,8)) + m("hams",pair(41,137,7.5,21)) + m("calves",pair(41,173,6,17));
+  return '<svg viewBox="0 0 224 212" role="img" aria-label="العضلات المستهدفة"><g transform="translate(0,0)">'+front+'<text x="50" y="209" text-anchor="middle">أمام</text></g><g transform="translate(124,0)">'+back+'<text x="50" y="209" text-anchor="middle">خلف</text></g></svg>';
+}
+
+/* ---------- render ---------- */
+var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+function renderTabs(){
+  $("tabs").innerHTML = DAYS.map(function(d,i){
+    return '<button type="button" class="tab" data-act="day" data-i="'+i+'" aria-pressed="'+(i===dayIdx)+'"><b>'+d.name+'</b><small>'+d.wd+'</small></button>';
+  }).join("");
+  $("restseg").innerHTML = '<span class="progress" style="align-self:center;margin-inline-end:4px">الراحة الافتراضية</span>' + RESTS.map(function(s){
+    return '<button type="button" data-act="rest" data-s="'+s+'" aria-pressed="'+(S.prefs.rest===s)+'">'+mmss(s)+'</button>';
+  }).join("");
+  $("vt").setAttribute("aria-pressed", view==="train");
+  $("vl").setAttribute("aria-pressed", view==="log");
+}
+
+function updateProgress(){
+  var day = DAYS[dayIdx], d = draftFor(day), done = 0, tot = 0;
+  visibleEx(day).forEach(function(e){ d[e.id].forEach(function(x){ tot++; if(x.d) done++; }); });
+  $("prog").innerHTML = view==="train" ? '<b>'+done+'</b> / '+tot+' مجموعة' : S.sessions.length+' تمرين محفوظ';
+}
+
+function renderTrain(){
+  var day = DAYS[dayIdx], d = draftFor(day), h = [];
+  if(restToday && dayIdx===startIdx) h.push('<div class="banner">النهارده يوم راحة. التمرين الجاي: <b>'+day.name+'</b> يوم '+day.wd+'.</div>');
+  h.push('<div class="toggle"><span>رجلي لسه في الجبس (إخفاء تمارين الرجل)</span><button type="button" class="switch" data-act="legsafe" aria-pressed="'+!!S.prefs.legSafe+'" aria-label="وضع حماية الرجل"></button></div>');
+  if(S.prefs.legSafe) h.push('<div class="banner">تمارين الرجل مخفية. بعد فك الجبس اسأل الدكتور أو أخصائي العلاج الطبيعي عن الحمل قبل ما توقف الوضع ده، وابدأ بأوزان خفيفة جدًا أول 3-4 أسابيع.</div>');
+  visibleEx(day).forEach(function(e){
+    var last = lastFor(e.id), best = bestW(e.id), lastHtml = "";
+    var up = false;
+    if(last){
+      up = last.sets.every(function(x){ return x.w>0 && x.r>=e.hi; });
+      lastHtml = '<div class="last"><span>آخر مرة</span><span class="nums">'+last.sets.map(function(x){ return (x.w||0)+'×'+(x.r||0); }).join(' · ')+'</span>'+(best?'<span>الأعلى: <span class="nums">'+best+' kg</span></span>':'')+(up?'<span class="up">زوّد الوزن</span>':'')+'</div>';
+    } else {
+      lastHtml = '<div class="last"><span>أول مرة للتمرين ده. ابدأ بوزن تقدر تعمل بيه أعلى تكرارات المدى وتساوي ساب تكرار أو اتنين.</span></div>';
+    }
+    var rows = d[e.id].map(function(x,i){
+      var lw = last && last.sets[i] ? last.sets[i].w : (last && last.sets[0] ? last.sets[0].w : "");
+      return '<div class="set'+(x.d?' done':'')+'" data-row="'+e.id+':'+i+'">'+
+        '<span class="n">'+(i+1)+'</span>'+
+        '<label><input type="text" inputmode="decimal" id="w-'+e.id+'-'+i+'" data-ex="'+e.id+'" data-i="'+i+'" data-f="w" value="'+(x.w===""?"":x.w)+'" placeholder="'+(lw||"وزن")+'" aria-label="وزن المجموعة '+(i+1)+'"><span>kg</span></label>'+
+        '<span class="x">×</span>'+
+        '<label><input type="text" inputmode="numeric" id="r-'+e.id+'-'+i+'" data-ex="'+e.id+'" data-i="'+i+'" data-f="r" value="'+(x.r===""?"":x.r)+'" placeholder="'+e.lo+'-'+e.hi+'" aria-label="تكرارات المجموعة '+(i+1)+'"><span>rep</span></label>'+
+        '<button type="button" class="chk" data-act="check" data-ex="'+e.id+'" data-i="'+i+'" aria-pressed="'+!!x.d+'" aria-label="تم المجموعة '+(i+1)+'">'+CHECK+'</button>'+
+      '</div>';
+    }).join("");
+    h.push('<article class="ex">'+
+      '<div class="ex-head"><div class="ex-title"><h3>'+e.n+'</h3><div class="ar">'+(AR[e.id]||'')+'</div><p class="target"><b>'+e.s+' × '+(e.rp||(e.lo+'–'+e.hi))+'</b>'+(e.u?(e.us||' لكل دراع'):'')+' · '+(e.rt?'راحة '+e.rt:'قريب من الفشل')+'</p>'+
+      '<ul class="chips">'+(e.tag?'<li>'+e.tag+'</li>':'')+e.m.map(function(k){ return '<li>'+MN[k]+'</li>'; }).join("")+'</ul></div>'+
+      '<figure class="fig">'+fig(e.m)+'</figure></div>'+
+      '<p class="cue">'+e.cue+'</p>'+(e.warn?'<div class="banner">'+e.warn+'</div>':'')+lastHtml+
+      '<div class="sets">'+rows+'</div>'+
+      '<a class="demo" href="https://www.youtube.com/results?search_query='+encodeURIComponent(e.q)+'" target="_blank" rel="noopener">شاهد الأداء الصحيح على يوتيوب</a>'+
+    '</article>');
+  });
+  h.push('<div class="savebar"><button type="button" class="btn" data-act="save">حفظ تمرين اليوم</button></div>');
+  $("app").innerHTML = h.join("");
+}
+
+var pendingDel = null;
+function renderLog(){
+  if(!S.sessions.length){
+    $("app").innerHTML = '<div class="empty">لسه مفيش تمارين محفوظة. خلّص تمرين اليوم واضغط "حفظ تمرين اليوم" وهيظهر هنا.</div>';
+    return;
+  }
+  $("app").innerHTML = S.sessions.map(function(s){
+    var day = dayOf(s.day), lines = [];
+    if(day) day.ex.forEach(function(e){
+      var a = s.sets[e.id]; if(!a || !a.length) return;
+      lines.push('<li><span>'+e.n+'</span><span>'+a.map(function(x){ return (x.w||0)+'×'+(x.r||0); }).join(' · ')+'</span></li>');
+    });
+    return '<section class="sess"><header><div><h3>'+(day?day.name:"")+'</h3><div class="d">'+fmtDate(s.date)+'</div></div>'+
+      '<button type="button" class="btn ghost'+(pendingDel===s.id?' danger':'')+'" data-act="del" data-id="'+s.id+'">'+(pendingDel===s.id?'تأكيد الحذف':'حذف')+'</button></header><ul>'+lines.join("")+'</ul></section>';
+  }).join("");
+}
+
+function renderAll(){
+  renderTabs();
+  if(view==="train") renderTrain(); else renderLog();
+  updateProgress();
+}
+
+/* ---------- rest timer ---------- */
+var restEnd = 0, restTotal = 0, restTick = null, actx = null;
+function beep(){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.25,0.5].forEach(function(t){
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "sine"; o.frequency.value = 880; g.gain.value = 0.15;
+      o.connect(g); g.connect(actx.destination);
+      o.start(actx.currentTime+t); o.stop(actx.currentTime+t+0.15);
+    });
+  }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+}
+function startRest(sec){
+  try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume(); }catch(e){}
+  restTotal = sec; restEnd = Date.now()+sec*1000;
+  $("rest").hidden = false; document.body.classList.add("resting");
+  $("restlbl").textContent = "راحة";
+  clearInterval(restTick); restTick = setInterval(tick, 250); tick();
+}
+function stopRest(){
+  clearInterval(restTick); restTick = null; $("rest").hidden = true; document.body.classList.remove("resting");
+}
+function tick(){
+  var left = Math.ceil((restEnd-Date.now())/1000);
+  if(left<=0){
+    clearInterval(restTick); restTick = null;
+    $("resttime").textContent = "0:00"; $("restfill").style.transform = "scaleX(0)";
+    $("restlbl").textContent = "خلصت الراحة، ابدأ المجموعة الجاية";
+    beep();
+    setTimeout(function(){ if(!restTick) stopRest(); }, 5000);
+    return;
+  }
+  $("resttime").textContent = mmss(left);
+  $("restfill").style.transform = "scaleX("+Math.min(1,left/restTotal)+")";
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", function(ev){
+  var b = ev.target.closest("[data-act]"); if(!b) return;
+  var a = b.getAttribute("data-act");
+  if(a==="day"){ dayIdx = +b.getAttribute("data-i"); S.prefs.day = dayIdx; persist(); view = "train"; renderAll(); window.scrollTo(0,0); }
+  else if(a==="view"){ view = b.getAttribute("data-v"); pendingDel = null; renderAll(); window.scrollTo(0,0); }
+  else if(a==="rest"){ S.prefs.rest = +b.getAttribute("data-s"); persist(); renderTabs(); }
+  else if(a==="legsafe"){ S.prefs.legSafe = !S.prefs.legSafe; persist(); renderAll(); }
+  else if(a==="check"){
+    var d = draftFor(DAYS[dayIdx]), x = d[b.getAttribute("data-ex")][+b.getAttribute("data-i")];
+    x.d = !x.d; persist();
+    b.setAttribute("aria-pressed", x.d);
+    b.closest(".set").classList.toggle("done", x.d);
+    updateProgress();
+    if(x.d){ var exo = null; DAYS[dayIdx].ex.forEach(function(q){ if(q.id===b.getAttribute("data-ex")) exo = q; }); startRest(exo && exo.rest ? exo.rest : S.prefs.rest); }
+  }
+  else if(a==="rest-add"){ restEnd += (+b.getAttribute("data-s"))*1000; restTotal += (+b.getAttribute("data-s")); if(!restTick){ restTick = setInterval(tick,250); } tick(); }
+  else if(a==="rest-skip"){ stopRest(); }
+  else if(a==="save"){ saveSession(); }
+  else if(a==="del"){
+    var id = +b.getAttribute("data-id");
+    if(pendingDel===id){ S.sessions = S.sessions.filter(function(s){ return s.id!==id; }); pendingDel = null; persist(); toast("اتحذف"); }
+    else pendingDel = id;
+    renderAll();
+  }
+});
+document.addEventListener("input", function(ev){
+  var t = ev.target; if(!t.matches || !t.matches("input[data-ex]")) return;
+  var v = t.value.replace(",",".").replace(/[^0-9.]/g,"");
+  if(t.getAttribute("data-f")==="r") v = v.replace(/\./g,"");
+  if(v!==t.value) t.value = v;
+  var d = draftFor(DAYS[dayIdx]);
+  d[t.getAttribute("data-ex")][+t.getAttribute("data-i")][t.getAttribute("data-f")] = v;
+  persist();
+});
+
+function saveSession(){
+  var day = DAYS[dayIdx], d = draftFor(day), sets = {}, n = 0;
+  visibleEx(day).forEach(function(e){
+    var arr = [];
+    d[e.id].forEach(function(x){
+      var w = parseFloat(x.w), r = parseInt(x.r,10);
+      if((x.d || x.w!=="" || x.r!=="") && (w>0 || r>0)){ arr.push({w:isNaN(w)?0:w, r:isNaN(r)?0:r}); n++; }
+    });
+    if(arr.length) sets[e.id] = arr;
+  });
+  if(!n){ toast("سجّل مجموعة واحدة على الأقل"); return; }
+  var key = todayKey();
+  S.sessions = S.sessions.filter(function(s){ return !(s.date===key && s.day===day.id); });
+  S.sessions.unshift({id:Date.now(), date:key, day:day.id, sets:sets});
+  S.sessions.sort(function(a,b){ return a.date<b.date?1:a.date>b.date?-1:b.id-a.id; });
+  delete S.draft[day.id];
+  persist(); stopRest();
+  toast("اتحفظ التمرين ("+n+" مجموعة)");
+  renderAll(); window.scrollTo(0,0);
+}
+
+$("today").textContent = new Date().toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long"});
+renderAll();
+initCloud();
+})();
+</script>
+
+</body></html>
